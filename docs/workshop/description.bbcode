@@ -1,0 +1,67 @@
+[h1]Net Reliability[/h1]
+[b]Fixes lost packets in multiplayer: faster world loading on Wi-Fi, long distances and other lossy connections.[/b]
+Works with Host World, dedicated servers and Steam friend joins. [b]Everyone (server and all players) needs this mod.[/b]
+
+[h2]The problem[/h2]
+Necesse sends network data as UDP packets with no retransmission. Packets over about 1 KB are split into several pieces; if one piece is lost, the whole packet is thrown away and the game waits 2 seconds before asking again. On a lossy connection, terrain around you loads slowly and in patches.
+
+[h2]What it does[/h2]
+[list]
+[*][b]Lost pieces are resent at once:[/b] the receiver asks for exactly the missing pieces, the sender resends only those. No extra traffic when nothing is lost.
+[*][b]Fixes a vanilla bug[/b] where a split packet whose first piece arrives late can never be completed.
+[*][b]Bigger network buffers[/b] so bursts of map data are not dropped by the operating system.
+[*][b]Experimental KCP transport[/b] (off by default): when joining a server by IP, the whole connection runs over KCP, a reliable protocol, so even single lost packets are resent. Turn on [i]kcpEnabled[/i] in the config.
+[*]Measurement tools for admins: [i]/netrel status[/i] (server) and [i]/netrelc status[/i] (your client).
+[/list]
+
+[h2]Measured[/h2]
+Time to load the area after a teleport, with simulated loss on the server-to-player direction:
+[table]
+[tr][th]Loss[/th][th]Vanilla[/th][th]This mod[/th][th]KCP (experimental)[/th][/tr]
+[tr][td]0%[/td][td]1.1 s[/td][td]1.1 s[/td][td]1.1 s[/td][/tr]
+[tr][td]10%[/td][td]5.1-6.4 s[/td][td]2.3-2.6 s[/td][td]1.1-1.2 s[/td][/tr]
+[tr][td]20%[/td][td]10.0-12.2 s[/td][td]3.4-3.7 s[/td][td]1.2 s[/td][/tr]
+[/table]
+Measured on one machine (localhost); real networks also add latency.
+
+[h2]Notes[/h2]
+[list]
+[*]Settings: [i]cfg/mods/a632079.netreliability.cfg[/i] (created on first launch, every option commented). Each machine uses its own settings.
+[*]KCP: a player with [i]kcpEnabled[/i] can only join servers that run this mod. Steam friend joins never use KCP.
+[*]On a dedicated server the log shows "Error loading mod patch class ... SteamSendPatch". That is expected: dedicated servers have no Steam networking.
+[/list]
+
+[hr][/hr]
+
+[h1]Net Reliability 网络可靠性[/h1]
+[b]修复多人游戏丢包：Wi-Fi、远距离等网络不稳定时，地图加载更快。[/b]
+支持「主持世界」、独立服务器和 Steam 好友加入。[b]服务器和所有玩家都需要安装本 Mod。[/b]
+
+[h2]问题[/h2]
+Necesse 用 UDP 传输网络数据，而且没有重传。超过约 1 KB 的包会拆成好几片发送，只要丢了一片，整个包就作废，游戏要等 2 秒才重新请求。网络不稳定时，周围的地形加载得又慢又零碎。
+
+[h2]功能[/h2]
+[list]
+[*][b]丢了的分片马上补发：[/b]接收方只请求缺的那几片，发送方只重发这几片。没有丢包时不产生任何额外流量。
+[*][b]修复原版 bug：[/b]分片包的第一片晚到时，这个包永远拼不齐。
+[*][b]调大网络缓冲区：[/b]避免成批的地图数据被操作系统丢掉。
+[*][b]实验性 KCP 传输[/b]（默认关闭）：通过 IP 加入服务器时，整个连接改用可靠协议 KCP，单个包丢了也会重传。在设置文件里打开 [i]kcpEnabled[/i]。
+[*]给管理员的测量工具：[i]/netrel status[/i]（服务器）、[i]/netrelc status[/i]（本客户端）。
+[/list]
+
+[h2]实测[/h2]
+传送后周围区域加载完成的时间（模拟服务器到玩家方向的丢包）：
+[table]
+[tr][th]丢包率[/th][th]原版[/th][th]本 Mod[/th][th]KCP（实验性）[/th][/tr]
+[tr][td]0%[/td][td]1.1 秒[/td][td]1.1 秒[/td][td]1.1 秒[/td][/tr]
+[tr][td]10%[/td][td]5.1-6.4 秒[/td][td]2.3-2.6 秒[/td][td]1.1-1.2 秒[/td][/tr]
+[tr][td]20%[/td][td]10.0-12.2 秒[/td][td]3.4-3.7 秒[/td][td]1.2 秒[/td][/tr]
+[/table]
+在单台机器上测得（本机回环），真实网络还会有额外延迟。
+
+[h2]说明[/h2]
+[list]
+[*]设置文件：[i]cfg/mods/a632079.netreliability.cfg[/i]（第一次启动时生成，每项都有注释），每台机器各用自己的设置。
+[*]KCP：打开了 [i]kcpEnabled[/i] 的玩家只能加入装了本 Mod 的服务器。Steam 好友加入不使用 KCP。
+[*]独立服务器的日志里会出现 "Error loading mod patch class ... SteamSendPatch"，这是正常的：独立服务器没有 Steam 网络功能。
+[/list]

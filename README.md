@@ -79,3 +79,4 @@ tools/net-bench.sh [丢包率 ...]                    # 原版 vs 本 Mod 的完
 - [docs/UPGRADING.md](docs/UPGRADING.md)：游戏更新后的适配步骤
 - [docs/KCP.md](docs/KCP.md)：实验性的 KCP 传输
 - [docs/RESULTS.md](docs/RESULTS.md)：测量结果
+- [docs/workshop/PUBLISHING.md](docs/workshop/PUBLISHING.md)：发布到 Steam 创意工坊
