@@ -50,6 +50,7 @@ SendCache：按 identifier 保存原始数据报         Receiving → ReceiveTr
 | `compat/` | `GameInternals`：**唯一**使用反射访问私有成员的地方；`WireFormat`：对数据报布局的假设 | 是，集中在这里 |
 | `core/` | `Receiving`（收包入口：socket 缓冲区、模拟丢包、交给 tracker、合并修正）、`ReceiveTracker`（NACK 调度）、`SendCache`（补发）、`Sending`、`FrameTick`、`NetThreads`、`HookStatus` | 只用公开 API |
 | `packets/` | `PacketFragmentNack`，格式见 [PROTOCOL.md](PROTOCOL.md) | 只用公开 API |
+| `kcp/` | 实验性的 KCP 传输（[KCP.md](KCP.md)）：`Kcp`（ikcp.c 的移植）、`KcpSession`、`KcpTransport`、`KcpHooks`、`PacketKcpSegment` | 只用公开 API（加 `GameInternals` 生成包头） |
 | `steam/` | Steam P2P 发送路由。**只有这个包能引用 Steam 类**：独立服务器（`Server.jar`）没有 Steam 类，别处一引用就会在服务器上 `NoClassDefFoundError` | 是 |
 | `config/` | `NetConfig`（不可变快照，默认值只写在 `Builder` 里）、`NetSettings`（接入原版 mod 设置文件） | 只用公开 API |
 | `stats/` | `NetStats`（进程级计数器）、`StatsLog`（CSV） | 只用公开 API |
@@ -78,7 +79,7 @@ NACK 在 `NetworkInfo` 这一层工作，对直连 UDP 和 Steam P2P 都有效�
 
 ## 6. 已知限制
 
-- **单个数据报的包丢了，NACK 救不回来。** 接收方根本不知道这个包存在。区域数据大多只有 1–2 片（1.3.3 实测最多 3 片），所以收益只来自多片包；单片包仍然靠游戏自己的 2 秒重新请求。详见 [RESULTS.md](RESULTS.md)。
+- **单个数据报的包丢了，NACK 救不回来。** 实验性的 KCP 传输（[KCP.md](KCP.md)）能解决这个问题。 接收方根本不知道这个包存在。区域数据大多只有 1–2 片（1.3.3 实测最多 3 片），所以收益只来自多片包；单片包仍然靠游戏自己的 2 秒重新请求。详见 [RESULTS.md](RESULTS.md)。
 - **一个包的分片全丢了**，同样不知道它存在。
 - 模拟丢包只作用于本进程**收到的**数据报。
 - tracker 在钩子里（游戏合并这一片**之前**）就判定"已完成"。如果接收线程恰好在这两步之间停顿超过约 0.5 秒（`nackGiveUpMs` 和游戏 5 秒超时之间的余量），游戏可能先让它的半成品过期，tracker 随后会丢掉游戏其实还需要的副本。结果和原版一样（包丢了，游戏重新请求）：游戏重新开始的半成品需要所有分片，任何 NACK 补发都不会把它们全部补齐。

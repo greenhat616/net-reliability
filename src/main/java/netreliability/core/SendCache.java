@@ -16,6 +16,7 @@ import necesse.engine.network.NetworkPacket;
 import necesse.engine.network.networkInfo.NetworkInfo;
 import netreliability.compat.GameInternals;
 import netreliability.config.NetConfig;
+import netreliability.kcp.KcpTransport;
 import netreliability.stats.NetStats;
 
 /**
@@ -65,6 +66,7 @@ public final class SendCache {
     /** After the game sent a packet ({@code NetworkPacket.sendPacket}). */
     public static void onSent(NetworkPacket packet) {
         if (packet.identifier == 0 || packet.networkInfo == null || !GameInternals.isAvailable()) return;
+        if (KcpTransport.isReliable(packet.networkInfo)) return; // KCP resends by itself
         put(packet.identifier, packet.networkInfo, GameInternals.fragmentDatagrams(packet), System.currentTimeMillis());
     }
 

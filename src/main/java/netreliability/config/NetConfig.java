@@ -46,6 +46,16 @@ public final class NetConfig {
     public final boolean simulatedLossFragmentsOnly;
     /** Append a stats row to netreliability-stats.csv every this many seconds; 0 = off. */
     public final int statsLogSeconds;
+    /** EXPERIMENTAL, client side: carry the connection over KCP when joining a server by IP ({@code KcpTransport}). */
+    public final boolean kcpEnabled;
+    /** Server side: answer clients that talk KCP. */
+    public final boolean kcpAcceptFromClients;
+    /** KCP update interval in ms (KCP's {@code interval}). */
+    public final int kcpIntervalMs;
+    /** KCP send and receive window, in segments. */
+    public final int kcpWindow;
+    /** KCP fast resend: resend a segment after this many later segments were acknowledged; 0 = off. */
+    public final int kcpFastResend;
 
     private NetConfig(Builder b) {
         fixVanillaMergeBug = b.fixVanillaMergeBug;
@@ -61,6 +71,11 @@ public final class NetConfig {
         simulatedLoss = b.simulatedLoss;
         simulatedLossFragmentsOnly = b.simulatedLossFragmentsOnly;
         statsLogSeconds = b.statsLogSeconds;
+        kcpEnabled = b.kcpEnabled;
+        kcpAcceptFromClients = b.kcpAcceptFromClients;
+        kcpIntervalMs = b.kcpIntervalMs;
+        kcpWindow = b.kcpWindow;
+        kcpFastResend = b.kcpFastResend;
     }
 
     public static NetConfig get() {
@@ -112,6 +127,11 @@ public final class NetConfig {
         b.simulatedLoss = data.getFloat("simulatedLoss", d.simulatedLoss, 0.0F, 1.0F, false);
         b.simulatedLossFragmentsOnly = data.getBoolean("simulatedLossFragmentsOnly", d.simulatedLossFragmentsOnly, false);
         b.statsLogSeconds = data.getInt("statsLogSeconds", d.statsLogSeconds, 0, 3600, false);
+        b.kcpEnabled = data.getBoolean("kcpEnabled", d.kcpEnabled, false);
+        b.kcpAcceptFromClients = data.getBoolean("kcpAcceptFromClients", d.kcpAcceptFromClients, false);
+        b.kcpIntervalMs = data.getInt("kcpIntervalMs", d.kcpIntervalMs, 10, 100, false);
+        b.kcpWindow = data.getInt("kcpWindow", d.kcpWindow, 128, 4096, false);
+        b.kcpFastResend = data.getInt("kcpFastResend", d.kcpFastResend, 0, 20, false);
         return new NetConfig(b);
     }
 
@@ -129,6 +149,11 @@ public final class NetConfig {
         save.addFloat("simulatedLoss", simulatedLoss, "TESTING: share of incoming datagrams to drop on purpose (0-1)");
         save.addBoolean("simulatedLossFragmentsOnly", simulatedLossFragmentsOnly, "TESTING: drop only fragments of split packets");
         save.addInt("statsLogSeconds", statsLogSeconds, "Write a row to netreliability-stats.csv every N seconds; 0 = off");
+        save.addBoolean("kcpEnabled", kcpEnabled, "EXPERIMENTAL: join servers by IP over KCP (reliable, ordered). The server needs this mod");
+        save.addBoolean("kcpAcceptFromClients", kcpAcceptFromClients, "When hosting: answer clients that join over KCP");
+        save.addInt("kcpIntervalMs", kcpIntervalMs, "KCP update interval in ms (10-100)");
+        save.addInt("kcpWindow", kcpWindow, "KCP send/receive window in segments (128-4096)");
+        save.addInt("kcpFastResend", kcpFastResend, "KCP fast resend after N later ACKs; 0 = off");
     }
 
     public Builder toBuilder() {
@@ -146,6 +171,11 @@ public final class NetConfig {
         b.simulatedLoss = simulatedLoss;
         b.simulatedLossFragmentsOnly = simulatedLossFragmentsOnly;
         b.statsLogSeconds = statsLogSeconds;
+        b.kcpEnabled = kcpEnabled;
+        b.kcpAcceptFromClients = kcpAcceptFromClients;
+        b.kcpIntervalMs = kcpIntervalMs;
+        b.kcpWindow = kcpWindow;
+        b.kcpFastResend = kcpFastResend;
         return b;
     }
 
@@ -153,7 +183,9 @@ public final class NetConfig {
         return "mergeFix=" + fixVanillaMergeBug + ", nack=" + nackEnabled + " (delay " + nackDelayMs + " ms, retry >= " + nackRetryMinMs + " ms, " + nackMaxRounds
             + " rounds, give up " + nackGiveUpMs + " ms), sendCache=" + sendCacheMs + " ms/" + sendCacheMaxKB + " KB, socketBuffer="
             + socketBufferKB + " KB, steam=" + steamSendMode + ", simulatedLoss=" + simulatedLoss
-            + (simulatedLossFragmentsOnly ? " (fragments only)" : "") + ", statsLog=" + statsLogSeconds + " s";
+            + (simulatedLossFragmentsOnly ? " (fragments only)" : "") + ", statsLog=" + statsLogSeconds + " s, kcp="
+            + kcpEnabled + " (accept " + kcpAcceptFromClients + ", interval " + kcpIntervalMs + " ms, window " + kcpWindow
+            + ", fast resend " + kcpFastResend + ")";
     }
 
     /** Defaults live here and nowhere else. */
@@ -171,6 +203,11 @@ public final class NetConfig {
         public float simulatedLoss = 0.0F;
         public boolean simulatedLossFragmentsOnly = false;
         public int statsLogSeconds = 0;
+        public boolean kcpEnabled = false;
+        public boolean kcpAcceptFromClients = true;
+        public int kcpIntervalMs = 10;
+        public int kcpWindow = 256;
+        public int kcpFastResend = 2;
 
         public NetConfig build() {
             return new NetConfig(this);

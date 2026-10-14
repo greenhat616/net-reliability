@@ -42,17 +42,32 @@ public final class NetStats {
     public static final AtomicLong sendCacheEvictions = new AtomicLong();
     /** NACKs not answered because the peer used up its resend byte budget. */
     public static final AtomicLong resendBudgetDenied = new AtomicLong();
+    // KCP (experimental)
+    public static final AtomicLong kcpSessions = new AtomicLong();
+    public static final AtomicLong kcpDatagramsIn = new AtomicLong();
+    public static final AtomicLong kcpDatagramsOut = new AtomicLong();
+    /** Game datagrams that came out of KCP and went to the game. */
+    public static final AtomicLong kcpDelivered = new AtomicLong();
+    /** KCP datagrams that were not valid for their session, or game datagrams inside that the game could not parse. */
+    public static final AtomicLong kcpBadInput = new AtomicLong();
+    /** Sessions that failed (dead link, no progress, queue overflow, bad stream, idle); see the log for why. */
+    public static final AtomicLong kcpFailures = new AtomicLong();
+    /** Carriers that did not get a session: invalid, over the limits, or an unexpected new conversation. */
+    public static final AtomicLong kcpRejected = new AtomicLong();
+    /** Game datagrams not sent because their KCP session had failed (or was over its limits). */
+    public static final AtomicLong kcpDroppedSends = new AtomicLong();
     // Testing
     public static final AtomicLong simulatedDrops = new AtomicLong();
 
     private static final AtomicLong[] ALL = {splitStarted, splitCompleted, splitCleanCompleted, splitRecovered, splitGivenUp,
         fragmentsReceived, fragmentsLate, nacksSent, fragmentsRequested, maxFragmentsPerPacket, trackingOverflow, splitSent, fragmentsSent,
         nacksReceived, fragmentsResent, bytesResent, nackCacheMisses, nackWrongPeer, sendCacheEvictions, resendBudgetDenied,
-        simulatedDrops};
+        kcpSessions, kcpDatagramsIn, kcpDatagramsOut, kcpDelivered, kcpBadInput, kcpFailures, kcpRejected, kcpDroppedSends, simulatedDrops};
 
     public static final String COLUMNS = "splitStarted,splitCompleted,splitClean,splitRecovered,splitGivenUp,fragmentsReceived,"
         + "fragmentsLate,nacksSent,fragmentsRequested,maxFragments,trackingOverflow,splitSent,fragmentsSent,nacksReceived,"
-        + "fragmentsResent,bytesResent,nackCacheMisses,nackWrongPeer,sendCacheEvictions,resendBudgetDenied,simulatedDrops";
+        + "fragmentsResent,bytesResent,nackCacheMisses,nackWrongPeer,sendCacheEvictions,resendBudgetDenied,kcpSessions,"
+        + "kcpDatagramsIn,kcpDatagramsOut,kcpDelivered,kcpBadInput,kcpFailures,kcpRejected,kcpDroppedSends,simulatedDrops";
 
     private NetStats() {
     }
@@ -87,6 +102,11 @@ public final class NetStats {
             + nacksReceived.get() + ", resent " + fragmentsResent.get() + " fragments (" + bytesResent.get() / 1024 + " KB), "
             + nackCacheMisses.get() + " cache misses, " + nackWrongPeer.get() + " wrong peer, " + resendBudgetDenied.get()
             + " over budget, " + sendCacheEvictions.get() + " evicted");
+        if (kcpSessions.get() > 0) {
+            out.add("KCP: " + kcpSessions.get() + " sessions opened, datagrams in " + kcpDatagramsIn.get() + " / out "
+                + kcpDatagramsOut.get() + ", delivered to game " + kcpDelivered.get() + ", bad input " + kcpBadInput.get()
+                + ", failed " + kcpFailures.get() + ", rejected " + kcpRejected.get() + ", dropped sends " + kcpDroppedSends.get());
+        }
         if (simulatedDrops.get() > 0) out.add("Simulated drops: " + simulatedDrops.get());
         return out;
     }

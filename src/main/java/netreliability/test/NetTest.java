@@ -35,6 +35,8 @@ public final class NetTest {
      */
     private static final float LOSS_AFTER_JOIN = Float.parseFloat(System.getProperty("netreliability.test.loss", "-1"));
     private static final int TELEPORT_PAUSE_MS = 1000;
+    /** No report this long after a teleport: send the teleport again (the client measures from when it moved). */
+    private static final int TELEPORT_RETRY_MS = 30000;
     /** A jump of this many pixels in one frame is a teleport (positions are 250+ tiles apart). */
     private static final float TELEPORT_DISTANCE = 100 * 32;
     private static final int LOAD_TIMEOUT_MS = 60000;
@@ -49,6 +51,8 @@ public final class NetTest {
     private static int teleportsDone;
     private static long nextTeleportAt;
     private static boolean waitingForClient;
+    private static long teleportSentAt;
+    private static int teleportRetries;
     private static final List<Long> durations = Collections.synchronizedList(new ArrayList<>());
     private static boolean serverDone;
 
@@ -68,7 +72,16 @@ public final class NetTest {
     public static void serverTick(Server server, long now) {
         if (!ENABLED || serverDone) return;
         if (target == null) return; // set by the client's first report
-        if (waitingForClient || now < nextTeleportAt) return;
+        if (waitingForClient) {
+            // The teleport itself can be lost (vanilla does not resend it): the client then never moves or reports.
+            if (now - teleportSentAt > TELEPORT_RETRY_MS) {
+                teleportRetries++;
+                GameLog.out.println("[NetReliability] test teleport " + teleportsDone + " retried (no report)");
+                teleport(position((teleportsDone - 1) % POSITIONS, target.getLevel()), now);
+            }
+            return;
+        }
+        if (now < nextTeleportAt) return;
         if (teleportsDone >= POSITIONS * ROUNDS) {
             serverDone = true;
             summary();
@@ -78,6 +91,11 @@ public final class NetTest {
         teleportsDone++;
         waitingForClient = true;
         GameLog.out.println("[NetReliability] test teleport " + teleportsDone + " to tile " + p.x + "," + p.y);
+        teleport(p, now);
+    }
+
+    private static void teleport(Point p, long now) {
+        teleportSentAt = now;
         target.changeLevel(target.getLevelIdentifier(), level -> new Point(p.x * 32 + 16, p.y * 32 + 16), true);
     }
 
@@ -184,6 +202,7 @@ public final class NetTest {
                 + " ms, max " + list.get(list.size() - 1) + " ms";
             GameLog.out.println("[NetReliability] test round " + (round + 1) + ": " + stats + ", timeouts " + timeouts);
         }
+        GameLog.out.println("[NetReliability] test round teleport retries: " + teleportRetries);
         for (String line : NetStats.describe()) GameLog.out.println("[NetReliability] test server " + line);
         GameLog.out.println("[NetReliability] test DONE");
     }

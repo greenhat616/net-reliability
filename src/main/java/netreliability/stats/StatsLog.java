@@ -1,6 +1,8 @@
 package netreliability.stats;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,6 +26,7 @@ public final class StatsLog {
     private static long lastServerRow;
     private static long lastClientRow;
     private static boolean headerChecked;
+    private static boolean disabled;
     private static boolean errorLogged;
 
     private StatsLog() {
@@ -60,15 +63,36 @@ public final class StatsLog {
         return out;
     }
 
+    private static String firstLine(File file) throws IOException {
+        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
+            return in.readLine();
+        }
+    }
+
     private static void write(String row) {
         File file = file();
         try {
-            boolean needHeader = !headerChecked && (!file.exists() || file.length() == 0);
-            headerChecked = true;
+            if (disabled) return;
+            boolean needHeader = false;
+            if (!headerChecked) {
+                needHeader = !file.exists() || file.length() == 0 || !HEADER.equals(firstLine(file));
+                if (needHeader && file.exists() && file.length() > 0) {
+                    // Written with other columns: move it aside rather than mix two schemas in one file.
+                    File old = new File(file.getPath() + ".old-" + System.currentTimeMillis() + ".csv");
+                    if (!file.renameTo(old)) {
+                        disabled = true;
+                        GameLog.warn.println("[NetReliability] " + file + " has other columns and could not be moved aside; stats CSV off");
+                        return;
+                    }
+                }
+            }
             try (PrintWriter out = new PrintWriter(new FileWriter(file, true))) {
                 if (needHeader) out.println(HEADER);
                 out.println(row);
+                if (out.checkError()) throw new IOException("write failed");
             }
+            // Only now: a failed first write must write the header again next time.
+            headerChecked = true;
         } catch (IOException e) {
             if (!errorLogged) {
                 errorLogged = true;

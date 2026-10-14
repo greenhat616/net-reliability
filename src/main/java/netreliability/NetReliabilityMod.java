@@ -13,6 +13,8 @@ import netreliability.compat.GameInternals;
 import netreliability.config.NetConfig;
 import netreliability.config.NetSettings;
 import netreliability.core.ReceiveTracker;
+import netreliability.kcp.KcpTransport;
+import netreliability.kcp.PacketKcpSegment;
 import netreliability.packets.PacketFragmentNack;
 import netreliability.steam.SteamSupport;
 import netreliability.test.NetTest;
@@ -35,17 +37,20 @@ public class NetReliabilityMod {
         // Registration order is the packet ID: both sides must register the same packets in the same order.
         PacketRegistry.registerPacket(true, false, false, PacketFragmentNack.class);
         PacketRegistry.registerPacket(PacketNetTestReady.class);
+        PacketRegistry.registerPacket(true, false, false, PacketKcpSegment.class);
         CommandsManager.registerServerCommand(new NetRelCommand(false));
         CommandsManager.registerClientCommand(new NetRelCommand(true));
         GameEvents.addListener(ServerClientDisconnectEvent.class, new GameEventListener<ServerClientDisconnectEvent>() {
             @Override
             public void onEvent(ServerClientDisconnectEvent event) {
                 ReceiveTracker.forget(event.client.networkInfo);
+                KcpTransport.forget(event.client.networkInfo);
             }
         });
     }
 
     public void postInit() {
+        KcpTransport.init();
         applyConfig();
         GameLog.out.println("[NetReliability] " + NetConfig.get().describe());
         if (NetTest.ENABLED) TestCharacter.ensureExists();

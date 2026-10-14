@@ -22,6 +22,9 @@
 | `NetworkPacket.mergePackets(NetworkPacket)` | `NetworkPacketMergePatch`（exit：返回值不是 `this` 时，用 `@Advice.FieldValue("complete")` 读出 `this` 的正确计数，经 `GameInternals.setFragmentCount` 写给返回值） | 第 0 片晚到的包（包括补发的第 0 片）永远拼不齐；游戏的 `incompleteDropped` 计数会上涨 |
 | `Server.frameTick(TickManager)` | `ServerFrameTickPatch`（exit） | 服务器端不再发 NACK，CSV 和基准测试驱动停止 |
 | `Client.frameTick(TickManager)` | `ClientFrameTickPatch`（exit） | 客户端不再发 NACK |
+| `DatagramNetworkInfo.send(byte[])` | `DatagramSendPatch`（enter，可以跳过原方法） | KCP 会话收不到要发的数据，KCP 连接无法建立（客户端连不上） |
+| `ClientAddressNetwork.openConnection()` | `ClientOpenConnectionPatch`（exit，读私有字段 `socket`、`address` 和 `port`） | 客户端不再发起 KCP，连接退回普通 UDP |
+| `ClientAddressNetwork.close()` | `ClientCloseConnectionPatch`（enter，读私有字段 `socket`） | 关闭的客户端会话要等 socket 关闭后由更新循环清理 |
 | `SteamNetworkMessagesInfo.send(byte[])`（仅 `Necesse.jar`） | `SteamSendPatch`（enter，可以跳过原方法） | `FRAGMENTS_RELIABLE` 失效。在 `Server.jar` 上本来就会打印 "Error loading mod patch class ... likely outdated mod"，这是**预期行为**，因为服务器端没有 Steam 类 |
 
 `/netrel status` 里的 `Hooks seen` 一行显示每个 patch 是否真的运行过，是游戏更新后最快的检查方法。
@@ -45,6 +48,9 @@
 | **分片标志是第 0 字节的第 0 位**（`PacketWriter.putNextBoolean` 从第 0 位开始写） | `WireFormat.isFragment`，只有 Steam 的 `FRAGMENTS_RELIABLE` 用到。脚本查不出这一项，见 UPGRADING.md 第 3 步的手动检查 |
 | `PacketRegistry.registerPacket(boolean, boolean, boolean, Class)` | 注册 NACK |
 | `ServerClientDisconnectEvent.client.networkInfo` | 玩家断开时清掉这个对端的接收记录 |
+| `NetworkPacket(NetworkInfo, byte[])`（会抛 `UnknownPacketException`）、`getTypePacket()`、`type`、`PacketRegistry.getPacketID(Class)` | KCP：还原收到的数据报、识别载体包 |
+| `DatagramNetworkInfo.address` / `port` | KCP 会话的键 |
+| **游戏接收缓冲区是 1024 字节**（各接收循环里的 `new byte[1024]`） | KCP 的 MTU = 1024 − 包头长度。`WireFormat.MAX_DATAGRAM` |
 | `SteamNetworkMessagesInfo.sendFlag`（public static）、`networking`、`remoteID`、`defaultChannel` | Steam 发送路由 |
 | `Client.packetManager`、`Server.packetManager`、`Client.getLocalServer()` | `FrameTick` |
 | 仅测试用：`ClientLevelLoading.isLoadingDone()`、`ServerClient.changeLevel(LevelIdentifier, Function<Level, Point>, boolean)`、`Client.loading.isDone()`、`CharacterSave` | `NetTest`、`TestCharacter` |

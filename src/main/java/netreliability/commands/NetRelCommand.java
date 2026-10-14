@@ -20,6 +20,7 @@ import netreliability.core.HookStatus;
 import netreliability.core.ReceiveTracker;
 import netreliability.core.Receiving;
 import netreliability.core.SendCache;
+import netreliability.kcp.KcpTransport;
 import netreliability.stats.NetStats;
 import netreliability.stats.StatsLog;
 import netreliability.steam.SteamSupport;
@@ -131,6 +132,7 @@ public class NetRelCommand extends ModularChatCommand {
         out.addAll(NetStats.describe());
         out.add(ReceiveTracker.describe());
         out.add(SendCache.describe());
+        out.addAll(KcpTransport.describe());
         return out;
     }
 }

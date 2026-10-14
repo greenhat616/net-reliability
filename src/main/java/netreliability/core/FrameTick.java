@@ -3,6 +3,7 @@ package netreliability.core;
 import necesse.engine.GameLog;
 import necesse.engine.network.client.Client;
 import necesse.engine.network.server.Server;
+import netreliability.kcp.KcpTransport;
 import netreliability.stats.StatsLog;
 import netreliability.test.NetTest;
 
@@ -10,6 +11,7 @@ import netreliability.test.NetTest;
 public final class FrameTick {
 
     private static volatile boolean errorLogged;
+    private static long lastTombstonePrune;
 
     private FrameTick() {
     }
@@ -21,6 +23,10 @@ public final class FrameTick {
             ReceiveTracker.tick(server.packetManager, now);
             common(now);
             StatsLog.tick("server", server.packetManager, now);
+            if (now - lastTombstonePrune > 1000) {
+                lastTombstonePrune = now;
+                KcpTransport.pruneTombstones(info -> server.streamClients().anyMatch(c -> info.equals(c.networkInfo)), now);
+            }
             NetTest.serverTick(server, now);
         } catch (RuntimeException e) {
             logOnce(e);

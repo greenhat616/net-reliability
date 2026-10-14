@@ -56,9 +56,27 @@ for JAR in Necesse.jar Server.jar; do
     expect $JAR necesse.engine.network.server.ServerClient "public necesse.engine.network.networkInfo.NetworkInfo networkInfo;" "forget peer on disconnect"
     expect $JAR necesse.engine.events.ServerClientDisconnectEvent "public final necesse.engine.network.server.ServerClient client;" "forget peer on disconnect"
     expect $JAR necesse.engine.modLoader.ModSettings "public abstract void applyLoadData(necesse.engine.save.LoadData);" "NetSettings"
+    CAN=necesse.engine.network.client.network.ClientAddressNetwork
+    expect $JAR $CAN "private java.net.DatagramSocket socket;" "ClientOpenConnectionPatch / ClientCloseConnectionPatch (KCP)"
+    expect $JAR $CAN "private java.net.InetAddress address;" "ClientOpenConnectionPatch (KCP)"
+    expect $JAR $CAN "public final int port;" "ClientOpenConnectionPatch (KCP)"
+    expect $JAR $CAN "public boolean openConnection();" "ClientOpenConnectionPatch (KCP)"
+    expect $JAR $CAN "public void close();" "ClientCloseConnectionPatch (KCP)"
+    expect $JAR necesse.engine.network.networkInfo.DatagramNetworkInfo "public void send(byte[]) throws java.io.IOException;" "DatagramSendPatch (KCP)"
+    expect $JAR necesse.engine.network.networkInfo.DatagramNetworkInfo "public final java.net.InetAddress address;" "KCP session key"
+    expect $JAR necesse.engine.network.networkInfo.DatagramNetworkInfo "public final int port;" "KCP session key"
+    expect $JAR $NP "public necesse.engine.network.NetworkPacket(necesse.engine.network.networkInfo.NetworkInfo, byte[]) throws necesse.engine.network.UnknownPacketException;" "KCP delivery"
+    expect $JAR $NP "public necesse.engine.network.Packet getTypePacket();" "KCP carrier"
+    expect $JAR $NP "public final int type;" "KCP carrier"
+    expect $JAR necesse.engine.registries.PacketRegistry "public static int getPacketID(java.lang.Class<? extends necesse.engine.network.Packet>);" "KCP carrier"
+    expect $JAR "$CAN\$1" "sipush        1024" "client receive buffer (anonymous listen thread) = KCP MTU bound (WireFormat.MAX_DATAGRAM)"
     expect $JAR necesse.engine.network.client.ClientLevelLoading "public boolean isLoadingDone();" "NetTest (benchmark only)"
     expect $JAR necesse.engine.network.server.ServerClient "public void changeLevel(necesse.engine.util.LevelIdentifier, java.util.function.Function<necesse.level.maps.Level, java.awt.Point>, boolean);" "NetTest teleports (benchmark only)"
 done
+
+# The servers' receive loops: their buffers bound the KCP MTU too (WireFormat.MAX_DATAGRAM).
+expect Necesse.jar 'necesse.engine.platforms.steam.network.server.network.SteamServerOpenNetwork$ServerListenThread' "sipush        1024" "hosting: server receive buffer = KCP MTU bound"
+expect Server.jar 'necesse.engine.platforms.desktop.network.server.network.DesktopServerOpenNetwork$ServerListenThread' "sipush        1024" "dedicated server receive buffer = KCP MTU bound"
 
 # Steam exists in the client jar only.
 SI=necesse.engine.platforms.steam.network.networkInfo.SteamNetworkMessagesInfo

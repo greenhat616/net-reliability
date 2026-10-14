@@ -14,6 +14,7 @@ Necesse 1.3.3 Mod：补上游戏网络层缺的丢包补发，并提供网络测
 | 修正原版合并 bug | 第 0 片晚到的分片包在原版里永远拼不齐（计数没更新），补发第 0 片时必然遇到 |
 | 调大 socket 缓冲区 | 把游戏 UDP socket 的收发缓冲区调到 4 MB（Windows 默认 64 KB），减少突发流量时被系统丢掉的包 |
 | Steam 发送模式 | 实验选项：只让分片走 Steam 的可靠通道，或者全部走可靠通道 |
+| KCP 传输（实验性） | 直连 IP 时把整个连接跑在 KCP 上，单数据报的包丢了也能重传 |
 | 测量 | `/netrel status` 查看游戏和本 Mod 的计数器；可以定时写 CSV；可以模拟丢包 |
 
 **所有玩家都需要安装本 Mod**（`clientside = false`），因为它注册了新的网络包。
@@ -37,8 +38,13 @@ Necesse 1.3.3 Mod：补上游戏网络层缺的丢包补发，并提供网络测
 | `socketBufferKB` | 4096 | 请求的 UDP socket 缓冲区大小；0 = 系统默认 |
 | `steamSendMode` | VANILLA | Steam P2P：`VANILLA` / `FRAGMENTS_RELIABLE`（分片走可靠通道）/ `ALL_RELIABLE`（全部可靠，可能因队头阻塞让移动卡顿，仅供对比） |
 | `simulatedLoss` | 0 | **测试用**：本机故意丢掉的入站数据报比例（0–1） |
-| `simulatedLossFragmentsOnly` | false | **测试用**：只丢分片 |
+| `simulatedLossFragmentsOnly` | false | **测试用**：只丢分片。对走 KCP 的连接无效（KCP 数据报本身不是分片） |
 | `statsLogSeconds` | 0 | 每隔几秒往 `<数据目录>/netreliability-stats.csv` 写一行计数器；0 = 关闭 |
+| `kcpEnabled` | false | **【实验性】** 客户端通过 IP 加入服务器时改用 KCP 协议（可靠、有序）。服务器必须装本 Mod 且 `kcpAcceptFromClients = true`，否则连不上。Steam P2P 不受影响。详见 [docs/KCP.md](docs/KCP.md) |
+| `kcpAcceptFromClients` | true | 作为服务器（或主机）时，回应用 KCP 加入的客户端 |
+| `kcpIntervalMs` | 10 | KCP 的更新间隔 |
+| `kcpWindow` | 256 | KCP 的收发窗口（段数） |
+| `kcpFastResend` | 2 | 一个段之后有几个段被确认，就立即重传它；0 = 关闭 |
 
 ## 指令
 
@@ -71,4 +77,5 @@ tools/net-bench.sh [丢包率 ...]                    # 原版 vs 本 Mod 的完
 - [docs/PROTOCOL.md](docs/PROTOCOL.md)：NACK 包格式和兼容规则
 - [docs/GAME-INTERNALS.md](docs/GAME-INTERNALS.md)：依赖的每个游戏成员
 - [docs/UPGRADING.md](docs/UPGRADING.md)：游戏更新后的适配步骤
+- [docs/KCP.md](docs/KCP.md)：实验性的 KCP 传输
 - [docs/RESULTS.md](docs/RESULTS.md)：测量结果

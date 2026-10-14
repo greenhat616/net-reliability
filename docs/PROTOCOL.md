@@ -33,6 +33,12 @@
 2. 不要改包的注册顺序。所有包的 ID 由注册顺序决定，双方必须一致。新包只能**加在最后**。
 3. 本 mod 是 `clientside = false`，游戏会要求服务器和客户端的 mod 列表（包括版本）一致。所以实际上不会出现两个协议版本混用，以上规则只是保底。
 
+## PacketKcpSegment（双向，实验性 KCP）
+
+内容就是一个 KCP 数据报的原始字节（24 字节的 KCP 头加数据，小端序，格式与 `ikcp.c` 相同），没有长度前缀。注册参数同 NACK（`processInstantly`、不要求已连接）。正常情况下它在 `submitInPacket` 就被本 mod 截下，不会进入游戏的包处理；万一进去了，处理函数什么也不做。KCP 流里每个游戏数据报的格式是 `u16 长度（大端）+ 字节`。详见 [KCP.md](KCP.md)。
+
+注册顺序：`PacketFragmentNack`、`PacketNetTestReady`、`PacketKcpSegment`。
+
 ## PacketNetTestReady（客户端 → 服务器，仅基准测试用）
 
 `int seq, long durationMs`：第 `seq` 次传送（0 = 刚加入时）之后，客户端加载完区域用了多少毫秒（-1 = 超时，0 = 不需要加载）。只有 `-Dnetreliability.test=1` 时服务器才处理它。它总是会被注册，以保证两边的包 ID 一致。

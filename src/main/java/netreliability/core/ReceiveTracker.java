@@ -13,6 +13,7 @@ import necesse.engine.network.PacketManager;
 import necesse.engine.network.networkInfo.NetworkInfo;
 import netreliability.compat.GameInternals;
 import netreliability.config.NetConfig;
+import netreliability.kcp.KcpTransport;
 import netreliability.packets.PacketFragmentNack;
 import netreliability.stats.NetStats;
 
@@ -131,6 +132,8 @@ public final class ReceiveTracker {
                     continue;
                 }
                 if (!config.nackEnabled || p.rounds >= config.nackMaxRounds) continue;
+                // Over KCP a missing fragment is only late (KCP resends it), and the sender keeps no copies for NACKs.
+                if (KcpTransport.isReliable(p.replyTo)) continue;
                 if (now - p.lastFragmentAt < config.nackDelayMs) continue;
                 if (p.rounds > 0 && now - p.lastNackAt < retryWait(p.replyTo, config)) continue;
                 int[] ranges = missingRanges(p);

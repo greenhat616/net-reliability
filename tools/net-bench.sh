@@ -8,6 +8,7 @@
 # Groups (NETBENCH_GROUPS, default "vanilla mod"):
 #   vanilla  every feature of this mod off (no NACK, no merge-bug fix, OS socket buffers): the game's own behaviour
 #   mod      default settings
+#   kcp      default settings + the client joins over KCP (experimental; checked: the client log must show the session)
 #
 # Exit code: non-zero if the build or any run failed.
 set -uo pipefail
@@ -39,6 +40,13 @@ for loss in "${LOSSES[@]}"; do
         case "$group" in
             vanilla) run "vanilla-$loss" "$loss" --server "${VANILLA[@]}" --client "${VANILLA[@]}" ;;
             mod) run "mod-$loss" "$loss" ;;
+            kcp)
+                run "kcp-$loss" "$loss" --client kcpEnabled=true
+                if ! grep -aq "KCP (experimental) on for" "$ROOT/build/nettest/kcp-$loss/client.log" 2>/dev/null; then
+                    echo "== kcp-$loss FAILED: the client did not use KCP" | tee -a "$SUMMARY"
+                    FAILED=1
+                fi
+                ;;
             *) echo "unknown group: $group"; FAILED=1 ;;
         esac
     done

@@ -12,6 +12,7 @@ import necesse.engine.network.PacketManager;
 import necesse.engine.network.networkInfo.DatagramNetworkInfo;
 import netreliability.compat.GameInternals;
 import netreliability.config.NetConfig;
+import netreliability.kcp.KcpTransport;
 import netreliability.stats.NetStats;
 
 /**
@@ -33,14 +34,17 @@ public final class Receiving {
         if (packet.networkInfo == null) return false; // same-process (host or singleplayer) traffic
         try {
             HookStatus.receive = true;
-            if (packet.networkInfo instanceof DatagramNetworkInfo) tune(((DatagramNetworkInfo) packet.networkInfo).socket);
+            // Datagrams KCP hands to the game already survived the network: no tuning, no simulated loss.
+            boolean fromKcp = KcpTransport.isDelivering();
+            if (!fromKcp && packet.networkInfo instanceof DatagramNetworkInfo) tune(((DatagramNetworkInfo) packet.networkInfo).socket);
             boolean fragment = packet.identifier != 0;
             NetConfig config = NetConfig.get();
-            if (config.simulatedLoss > 0 && (fragment || !config.simulatedLossFragmentsOnly)
+            if (!fromKcp && config.simulatedLoss > 0 && (fragment || !config.simulatedLossFragmentsOnly)
                 && ThreadLocalRandom.current().nextFloat() < config.simulatedLoss) {
                 NetStats.simulatedDrops.incrementAndGet();
                 return true;
             }
+            if (!fromKcp && KcpTransport.onCarrier(manager, packet)) return true;
             if (fragment && GameInternals.isAvailable()) {
                 return ReceiveTracker.onFragment(manager, packet, System.currentTimeMillis());
             }
