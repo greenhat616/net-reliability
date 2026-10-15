@@ -18,7 +18,8 @@ import netreliability.NetReliabilityMod;
  *
  * <p>The page's options are stored under their page ids ({@code netrel...}); the file's other keys keep the names of
  * {@link NetConfig}. A file from before the page existed has the page's options under their old names: they are read
- * from there once and saved under the page ids from then on.
+ * from there once and saved under the page ids from then on. An old key found next to its page id wins (saving drops
+ * old keys, so it was written since, e.g. by a test script).
  *
  * <p>Order of a save from the page: the lib copies the page's values into its setting objects, then the game saves
  * every mod's settings, which calls {@link #addSaveData}. That is where the page's values reach {@link NetConfig}
@@ -36,10 +37,13 @@ public class NetSettings extends CustomModSettings {
     static final String SOCKET_BUFFER = "netrelsocketbufferkb";
     static final String STATS_LOG = "netrelstatslogseconds";
 
+    private static final String[] IDS = {KCP, KCP_ACCEPT, NACK, MERGE_FIX, STEAM, SOCKET_BUFFER, STATS_LOG};
+    /** The {@link NetConfig} key of each page id, same order as {@link #IDS}. */
+    private static final String[] OLD_KEYS = {"kcpEnabled", "kcpAcceptFromClients", "nackEnabled", "fixVanillaMergeBug",
+        "steamSendMode", "socketBufferKB", "statsLogSeconds"};
+
     /** {@link NetConfig} keys the page writes under its own ids instead. */
-    private static final Set<String> PAGE_KEYS = new HashSet<>(Arrays.asList(
-        "kcpEnabled", "kcpAcceptFromClients", "nackEnabled", "fixVanillaMergeBug", "steamSendMode", "socketBufferKB",
-        "statsLogSeconds"));
+    private static final Set<String> PAGE_KEYS = new HashSet<>(Arrays.asList(OLD_KEYS));
 
     private static NetSettings instance;
 
@@ -78,9 +82,10 @@ public class NetSettings extends CustomModSettings {
         super.applyLoadData(load);
         NetConfig fromFile = NetConfig.fromLoadData(load);
         NetConfig.set(fromFile);
-        // Options saved before the page existed are under their old names: take those for missing page ids.
-        for (String id : new String[] {KCP, KCP_ACCEPT, NACK, MERGE_FIX, STEAM, SOCKET_BUFFER, STATS_LOG}) {
-            if (!load.hasLoadDataByName(id)) push(id, fromFile);
+        // An old key wins over the page id: saving drops old keys, so one in the file was written since (by hand,
+        // by a test script, or before the page existed). Missing page ids take the file's (or default) value too.
+        for (int i = 0; i < IDS.length; i++) {
+            if (load.hasLoadDataByName(OLD_KEYS[i]) || !load.hasLoadDataByName(IDS[i])) push(IDS[i], fromFile);
         }
         pullFromPage();
     }
