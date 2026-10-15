@@ -1,0 +1,19 @@
+[settingsui]
+netrelsection=Net Reliability 网络可靠性
+netrelnackenabled=补发丢失的分片（NACK）
+netrelmergefix=修复游戏的分片包 bug
+netrelsocketbufferkb=UDP 缓冲区（KB，0 = 系统默认）
+netrelbasichint=这些只影响本机如何接收数据。服务器和所有玩家都需要安装本 Mod；除非要和原版对比，否则保持开启。
+netrelkcpsection=KCP 传输（实验性）
+netrelkcpenabled=通过 IP 加入服务器时使用 KCP
+netrelkcphint=任何丢失的数据包都会重传，不只是分片。服务器必须安装本 Mod；Steam 好友加入不会使用 KCP。从下一次连接开始生效。
+netrelkcpaccept=主持世界时：接受用 KCP 加入的玩家
+netrelsteamsection=Steam 好友联机
+netrelsteammode=Steam 发送模式
+netrelsteamvanilla=游戏默认（不可靠）
+netrelsteamfragments=分片包走可靠通道
+netrelsteamall=全部走可靠通道
+netrelsteamhint=只影响本机通过 Steam 发出的数据。「全部走可靠通道」在丢包时可能让移动卡顿。
+netrelstatssection=诊断
+netrelstatslogseconds=每隔 N 秒把网络统计写入 CSV（0 = 关闭）
+netrelfilehint=时间参数和测试选项在 cfg/mods/a632079.netreliability.cfg 里。管理员可以用 /netrel status（服务器）和 /netrelc status（本客户端）查看实时数据。

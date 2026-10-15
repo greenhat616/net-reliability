@@ -1,7 +1,9 @@
 # Net Reliability: notes for agents
 
 - Game dir: `D:\Program Files (x86)\Steam\steamapps\common\Necesse`. Decompiled sources: `../.decompiled/src/necesse` (client jar) and `../.decompiled/srv` (server jar).
-- Build: `JAVA_HOME=<JDK 17+> ./gradlew buildModJar` (Gradle needs 17+; the output is Java 8 bytecode).
+- Build: `JAVA_HOME=<JDK 17+> ./gradlew buildModJar` (Gradle needs 17+; the output is Java 8 bytecode). Needs Mod Settings Lib's jar in `mods/` (see README); it is a required dependency (`aizsave.modsettingslib`, Workshop 3558238376).
+- Settings: `config/NetSettings` (Mod Settings Lib page + the rest of the cfg file); read its class comment before touching save/load. Commands change settings with `NetConfig.setRuntime` (never saved); the file and the page use `NetConfig.set`.
+- Test harness: `tools/common.sh` loads the lib from the Workshop on the client and copies it into the server's `<datadir>/mods/`; the modlist order is the load order, so the lib comes first.
 - **Game update?** Follow `docs/UPGRADING.md`. Start with `tools/check-internals.sh`.
 - Layering rules (`docs/ARCHITECTURE.md` §3):
   - Private game members are reached only through `compat/GameInternals`.

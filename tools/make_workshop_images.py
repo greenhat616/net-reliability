@@ -211,7 +211,7 @@ def main():
     card(out / "03-kcp.png", "实验性：KCP 可靠传输", "Experimental: KCP transport", [
         ("通过 IP 加入时，整个连接跑在 KCP 上", "Joining by IP can run the whole link over KCP"),
         ("任何丢失的数据报都会重传，单包也不例外", "Every lost datagram is resent, not just fragments"),
-        ("默认关闭，在设置文件里打开 kcpEnabled", "Off by default: set kcpEnabled in the config"),
+        ("默认关闭，在 Mod 设置页里打开", "Off by default: turn it on in the mod settings"),
         ("Steam 好友联机不受影响", "Steam friend joins are not affected"),
     ], ART_KCP, seed=31)
     for p in [res / "preview.png", *sorted(out.glob("*.png"))]:

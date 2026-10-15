@@ -17,34 +17,38 @@ Necesse 1.3.3 Mod：补上游戏网络层缺的丢包补发，并提供网络测
 | KCP 传输（实验性） | 直连 IP 时把整个连接跑在 KCP 上，单数据报的包丢了也能重传 |
 | 测量 | `/netrel status` 查看游戏和本 Mod 的计数器；可以定时写 CSV；可以模拟丢包 |
 
-**所有玩家都需要安装本 Mod**（`clientside = false`），因为它注册了新的网络包。
+**服务器和所有玩家都需要安装本 Mod 和 [Mod Settings Lib](https://steamcommunity.com/sharedfiles/filedetails/?id=3558238376)**（两者都是 `clientside = false`）。本 Mod 注册了新的网络包；Mod Settings Lib 提供游戏内的设置页。
 
 实测效果见 [docs/RESULTS.md](docs/RESULTS.md)。一个限制：只占一个数据报的包丢了，接收方根本不知道它存在，NACK 补不回来。这类包仍然靠游戏自己的重新请求。
 
 ## 设置
 
-保存在 `cfg/mods/a632079.netreliability.cfg`（第一次启动时按默认值生成，每项都有注释）。每台机器只管自己，不在服务器和客户端之间同步。
+**游戏内：** 设置 → Mod 设置 → Net Reliability（由 Mod Settings Lib 提供），可以在游戏中随时修改，保存后立即生效（KCP 从下一次连接开始）。
 
-| 键 | 默认值 | 说明 |
-|---|---|---|
-| `fixVanillaMergeBug` | true | 修正原版 bug：第 0 片晚到（乱序或被补发）的分片包永远拼不齐。NACK 依赖它 |
-| `nackEnabled` | true | 本机收到的分片包缺片时请求补发。回应对方的补发请求始终开启 |
-| `nackDelayMs` | 40 | 分片包多久没有新片到达，就认为剩下的丢了 |
-| `nackRetryMinMs` | 120 | 再次请求同一个包前至少等多久（实际取它和 2 × RTT 中较大的） |
-| `nackMaxRounds` | 8 | 每个包最多请求几轮 |
-| `nackGiveUpMs` | 4500 | 从第一片到达算起，多久后放弃（必须小于游戏自己的 5000 ms 超时） |
-| `sendCacheMs` | 6000 | 发出的分片保留多久，用来回应补发请求 |
-| `sendCacheMaxKB` | 65536 | 保留的分片最多占多少内存 |
-| `socketBufferKB` | 4096 | 请求的 UDP socket 缓冲区大小；0 = 系统默认 |
-| `steamSendMode` | VANILLA | Steam P2P：`VANILLA` / `FRAGMENTS_RELIABLE`（分片走可靠通道）/ `ALL_RELIABLE`（全部可靠，可能因队头阻塞让移动卡顿，仅供对比） |
-| `simulatedLoss` | 0 | **测试用**：本机故意丢掉的入站数据报比例（0–1） |
-| `simulatedLossFragmentsOnly` | false | **测试用**：只丢分片。对走 KCP 的连接无效（KCP 数据报本身不是分片） |
-| `statsLogSeconds` | 0 | 每隔几秒往 `<数据目录>/netreliability-stats.csv` 写一行计数器；0 = 关闭 |
-| `kcpEnabled` | false | **【实验性】** 客户端通过 IP 加入服务器时改用 KCP 协议（可靠、有序）。服务器必须装本 Mod 且 `kcpAcceptFromClients = true`，否则连不上。Steam P2P 不受影响。详见 [docs/KCP.md](docs/KCP.md) |
-| `kcpAcceptFromClients` | true | 作为服务器（或主机）时，回应用 KCP 加入的客户端 |
-| `kcpIntervalMs` | 10 | KCP 的更新间隔 |
-| `kcpWindow` | 256 | KCP 的收发窗口（段数） |
-| `kcpFastResend` | 2 | 一个段之后有几个段被确认，就立即重传它；0 = 关闭 |
+**设置文件：** `cfg/mods/a632079.netreliability.cfg`（第一次启动时按默认值生成）。设置页上的选项在文件里用设置页的 id 保存（下表第二列），其余选项只能在文件里改。旧版本文件里用旧键名保存的值，会在第一次加载时自动迁移。
+
+每台机器只管自己，不在服务器和客户端之间同步。
+
+| 键 | 设置页 id（文件里的键） | 默认值 | 说明 |
+|---|---|---|---|
+| `fixVanillaMergeBug` | `netrelmergefix` | true | 修正原版 bug：第 0 片晚到（乱序或被补发）的分片包永远拼不齐。NACK 依赖它 |
+| `nackEnabled` | `netrelnackenabled` | true | 本机收到的分片包缺片时请求补发。回应对方的补发请求始终开启 |
+| `nackDelayMs` | 仅文件 | 40 | 分片包多久没有新片到达，就认为剩下的丢了 |
+| `nackRetryMinMs` | 仅文件 | 120 | 再次请求同一个包前至少等多久（实际取它和 2 × RTT 中较大的） |
+| `nackMaxRounds` | 仅文件 | 8 | 每个包最多请求几轮 |
+| `nackGiveUpMs` | 仅文件 | 4500 | 从第一片到达算起，多久后放弃（必须小于游戏自己的 5000 ms 超时） |
+| `sendCacheMs` | 仅文件 | 6000 | 发出的分片保留多久，用来回应补发请求 |
+| `sendCacheMaxKB` | 仅文件 | 65536 | 保留的分片最多占多少内存 |
+| `socketBufferKB` | `netrelsocketbufferkb` | 4096 | 请求的 UDP socket 缓冲区大小；0 = 系统默认 |
+| `steamSendMode` | `netrelsteammode`（0/1/2） | VANILLA | Steam P2P：`VANILLA` / `FRAGMENTS_RELIABLE`（分片走可靠通道）/ `ALL_RELIABLE`（全部可靠，可能因队头阻塞让移动卡顿，仅供对比） |
+| `simulatedLoss` | 仅文件 | 0 | **测试用**：本机故意丢掉的入站数据报比例（0–1） |
+| `simulatedLossFragmentsOnly` | 仅文件 | false | **测试用**：只丢分片。对走 KCP 的连接无效（KCP 数据报本身不是分片） |
+| `statsLogSeconds` | `netrelstatslogseconds` | 0 | 每隔几秒往 `<数据目录>/netreliability-stats.csv` 写一行计数器；0 = 关闭 |
+| `kcpEnabled` | `netrelkcpenabled` | false | **【实验性】** 客户端通过 IP 加入服务器时改用 KCP 协议（可靠、有序）。服务器必须装本 Mod 且 `kcpAcceptFromClients = true`，否则连不上。Steam P2P 不受影响。详见 [docs/KCP.md](docs/KCP.md) |
+| `kcpAcceptFromClients` | `netrelkcpaccept` | true | 作为服务器（或主机）时，回应用 KCP 加入的客户端 |
+| `kcpIntervalMs` | 仅文件 | 10 | KCP 的更新间隔 |
+| `kcpWindow` | 仅文件 | 256 | KCP 的收发窗口（段数） |
+| `kcpFastResend` | 仅文件 | 2 | 一个段之后有几个段被确认，就立即重传它；0 = 关闭 |
 
 ## 指令
 
@@ -61,6 +65,12 @@ Necesse 1.3.3 Mod：补上游戏网络层缺的丢包补发，并提供网络测
 主机（自己开世界）的服务器和客户端在同一个进程里，两个指令看到的本 Mod 计数器是同一份。
 
 ## 构建与测试
+
+编译前先把 Mod Settings Lib 的 jar 复制到 `mods/`（模板会把这个目录加进 classpath，但不会打包进本 Mod；该目录在 `.gitignore` 里）：
+
+```bash
+cp "<Steam>/steamapps/workshop/content/1169040/3558238376/ModSettingsLib-1.0.2-1.2.7.jar" mods/
+```
 
 ```bash
 JAVA_HOME=<JDK 17+> ./gradlew buildModJar          # 输出 build/jar/NetReliability-1.3.3-<版本>.jar

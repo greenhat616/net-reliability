@@ -1,0 +1,19 @@
+[settingsui]
+netrelsection=Net Reliability
+netrelnackenabled=Resend lost packet fragments (NACK)
+netrelmergefix=Fix the game's split-packet bug
+netrelsocketbufferkb=UDP socket buffer (KB, 0 = system default)
+netrelbasichint=These only change how this computer receives. Every player and the server need the mod; leave them on unless you are comparing with vanilla.
+netrelkcpsection=KCP transport (experimental)
+netrelkcpenabled=Join servers by IP over KCP
+netrelkcphint=Every lost packet is resent, not only fragments. The server must run this mod; Steam friend joins never use KCP. Applies from the next connection.
+netrelkcpaccept=When hosting: accept players who join over KCP
+netrelsteamsection=Steam friend connections
+netrelsteammode=Steam send mode
+netrelsteamvanilla=Game default (unreliable)
+netrelsteamfragments=Reliable for split packets
+netrelsteamall=Reliable for everything
+netrelsteamhint=Only affects what this computer sends over Steam. "Reliable for everything" can make movement stutter when packets are lost.
+netrelstatssection=Diagnostics
+netrelstatslogseconds=Write network stats to a CSV every N seconds (0 = off)
+netrelfilehint=Timings and testing options are in cfg/mods/a632079.netreliability.cfg. Admins can see live numbers with /netrel status (server) and /netrelc status (this client).

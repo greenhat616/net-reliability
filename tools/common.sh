@@ -6,22 +6,33 @@ JAVA_HOME_BUILD="${JAVA_HOME_BUILD:-/g/scoop/apps/temurin17-jdk/current}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 JAVA="$GAME_DIR/jre/bin/java"
 MOD_ID="a632079.netreliability"
+# Required dependency, loaded from the Steam Workshop subscription (3558238376).
+SETTINGS_LIB_ID="aizsave.modsettingslib"
+SETTINGS_LIB_JAR="$(ls "$WORKSHOP_DIR"/3558238376/*.jar 2>/dev/null | head -1)"
 
 build_mod() {
     (cd "$ROOT" && JAVA_HOME="$JAVA_HOME_BUILD" ./gradlew buildModJar -q)
 }
 
-# write_modlist <datadir>: only this mod enabled; every subscribed workshop mod listed as disabled, because
-# unlisted mods would default to enabled.
+# write_modlist <datadir> [server]: only this mod and Mod Settings Lib enabled; every other subscribed workshop mod listed as
+# disabled, because unlisted mods would default to enabled.
 write_modlist() {
     mkdir -p "$1/mods"
     {
         echo "{"
+        if [ "${2:-}" = server ]; then
+            # A dedicated server has no Steam Workshop: it loads the lib from <datadir>/mods/ instead.
+            cp "$SETTINGS_LIB_JAR" "$1/mods/"
+            echo "	{ id = $SETTINGS_LIB_ID, name = Mod Settings Lib, type = FILE_MOD, enabled = true },"
+        else
+            echo "	{ id = $SETTINGS_LIB_ID, name = Mod Settings Lib, type = STEAM_MOD, enabled = true },"
+        fi
+        # After the lib: the list order is the load order, and this mod's classes need the lib's.
         echo "	{ id = $MOD_ID, name = Net Reliability, type = DEV_MOD, enabled = true },"
         if [ -d "$WORKSHOP_DIR" ]; then
             for jar in "$WORKSHOP_DIR"/*/*.jar; do
                 id=$(unzip -p "$jar" mod.info 2>/dev/null | sed -n 's/^[[:space:]]*id = \(.*\),[[:space:]]*$/\1/p' | head -1)
-                [ -n "$id" ] && [ "$id" != "$MOD_ID" ] && echo "	{ id = $id, name = $id, type = STEAM_MOD, enabled = false },"
+                [ -n "$id" ] && [ "$id" != "$MOD_ID" ] && [ "$id" != "$SETTINGS_LIB_ID" ] && echo "	{ id = $id, name = $id, type = STEAM_MOD, enabled = false },"
             done
         fi
         echo "}"
@@ -91,7 +102,7 @@ make_world_template() {
     local dir="$ROOT/build/nettest/_world"
     rm -rf "$dir"
     mkdir -p "$dir/data"
-    write_modlist "$dir/data"
+    write_modlist "$dir/data" server
     echo "generating benchmark world in $dir"
     (
         cd "$GAME_DIR"

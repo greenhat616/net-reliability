@@ -18,7 +18,10 @@ public final class NetConfig {
 
     public static final String MOD_ID = "a632079.netreliability";
 
-    private static volatile NetConfig current = new NetConfig(new Builder());
+    /** What the settings file holds (and is saved from). */
+    private static volatile NetConfig saved = new NetConfig(new Builder());
+    /** In force: {@link #saved} plus runtime changes from commands or the benchmark, which are never saved. */
+    private static volatile NetConfig current = saved;
 
     /** Repair the vanilla mergePackets bug (a split packet whose fragment 0 arrives late never completes). */
     public final boolean fixVanillaMergeBug;
@@ -82,8 +85,19 @@ public final class NetConfig {
         return current;
     }
 
+    /** New settings from the file or the settings page: saved and in force. */
     public static void set(NetConfig config) {
+        saved = config;
         current = config;
+    }
+
+    /** A change until the next reload or settings save (commands, benchmark); never written to the file. */
+    public static void setRuntime(NetConfig config) {
+        current = config;
+    }
+
+    public static NetConfig saved() {
+        return saved;
     }
 
     public static NetConfig defaults() {
@@ -136,24 +150,29 @@ public final class NetConfig {
     }
 
     public void addSaveData(SaveData save) {
-        save.addBoolean("fixVanillaMergeBug", fixVanillaMergeBug, "Repair the game bug that drops split packets whose first fragment arrives late (needed by NACK)");
-        save.addBoolean("nackEnabled", nackEnabled, "Ask the sender to resend lost fragments of split packets (both sides need the mod)");
-        save.addInt("nackDelayMs", nackDelayMs, "A split packet with no new fragment for this long gets a NACK");
-        save.addInt("nackRetryMinMs", nackRetryMinMs, "Minimum wait before NACKing the same packet again (otherwise 2 x RTT)");
-        save.addInt("nackMaxRounds", nackMaxRounds, "NACK rounds per split packet before giving up");
-        save.addInt("nackGiveUpMs", nackGiveUpMs, "Give up on a split packet this long after its first fragment (< 5000, the game's timeout)");
-        save.addInt("sendCacheMs", sendCacheMs, "How long sent fragments are kept for answering NACKs");
-        save.addInt("sendCacheMaxKB", sendCacheMaxKB, "Memory cap for kept fragments, in KB");
-        save.addInt("socketBufferKB", socketBufferKB, "UDP socket receive/send buffer to request, in KB; 0 = OS default");
-        save.addEnum("steamSendMode", steamSendMode, "Steam P2P sends: VANILLA | FRAGMENTS_RELIABLE | ALL_RELIABLE");
-        save.addFloat("simulatedLoss", simulatedLoss, "TESTING: share of incoming datagrams to drop on purpose (0-1)");
-        save.addBoolean("simulatedLossFragmentsOnly", simulatedLossFragmentsOnly, "TESTING: drop only fragments of split packets");
-        save.addInt("statsLogSeconds", statsLogSeconds, "Write a row to netreliability-stats.csv every N seconds; 0 = off");
-        save.addBoolean("kcpEnabled", kcpEnabled, "EXPERIMENTAL: join servers by IP over KCP (reliable, ordered). The server needs this mod");
-        save.addBoolean("kcpAcceptFromClients", kcpAcceptFromClients, "When hosting: answer clients that join over KCP");
-        save.addInt("kcpIntervalMs", kcpIntervalMs, "KCP update interval in ms (10-100)");
-        save.addInt("kcpWindow", kcpWindow, "KCP send/receive window in segments (128-4096)");
-        save.addInt("kcpFastResend", kcpFastResend, "KCP fast resend after N later ACKs; 0 = off");
+        addSaveData(save, java.util.Collections.<String>emptySet());
+    }
+
+    /** Writes every setting except {@code skip} (the keys the in-game settings page writes itself). */
+    public void addSaveData(SaveData save, java.util.Set<String> skip) {
+        if (!skip.contains("fixVanillaMergeBug")) save.addBoolean("fixVanillaMergeBug", fixVanillaMergeBug, "Repair the game bug that drops split packets whose first fragment arrives late (needed by NACK)");
+        if (!skip.contains("nackEnabled")) save.addBoolean("nackEnabled", nackEnabled, "Ask the sender to resend lost fragments of split packets (both sides need the mod)");
+        if (!skip.contains("nackDelayMs")) save.addInt("nackDelayMs", nackDelayMs, "A split packet with no new fragment for this long gets a NACK");
+        if (!skip.contains("nackRetryMinMs")) save.addInt("nackRetryMinMs", nackRetryMinMs, "Minimum wait before NACKing the same packet again (otherwise 2 x RTT)");
+        if (!skip.contains("nackMaxRounds")) save.addInt("nackMaxRounds", nackMaxRounds, "NACK rounds per split packet before giving up");
+        if (!skip.contains("nackGiveUpMs")) save.addInt("nackGiveUpMs", nackGiveUpMs, "Give up on a split packet this long after its first fragment (< 5000, the game's timeout)");
+        if (!skip.contains("sendCacheMs")) save.addInt("sendCacheMs", sendCacheMs, "How long sent fragments are kept for answering NACKs");
+        if (!skip.contains("sendCacheMaxKB")) save.addInt("sendCacheMaxKB", sendCacheMaxKB, "Memory cap for kept fragments, in KB");
+        if (!skip.contains("socketBufferKB")) save.addInt("socketBufferKB", socketBufferKB, "UDP socket receive/send buffer to request, in KB; 0 = OS default");
+        if (!skip.contains("steamSendMode")) save.addEnum("steamSendMode", steamSendMode, "Steam P2P sends: VANILLA | FRAGMENTS_RELIABLE | ALL_RELIABLE");
+        if (!skip.contains("simulatedLoss")) save.addFloat("simulatedLoss", simulatedLoss, "TESTING: share of incoming datagrams to drop on purpose (0-1)");
+        if (!skip.contains("simulatedLossFragmentsOnly")) save.addBoolean("simulatedLossFragmentsOnly", simulatedLossFragmentsOnly, "TESTING: drop only fragments of split packets");
+        if (!skip.contains("statsLogSeconds")) save.addInt("statsLogSeconds", statsLogSeconds, "Write a row to netreliability-stats.csv every N seconds; 0 = off");
+        if (!skip.contains("kcpEnabled")) save.addBoolean("kcpEnabled", kcpEnabled, "EXPERIMENTAL: join servers by IP over KCP (reliable, ordered). The server needs this mod");
+        if (!skip.contains("kcpAcceptFromClients")) save.addBoolean("kcpAcceptFromClients", kcpAcceptFromClients, "When hosting: answer clients that join over KCP");
+        if (!skip.contains("kcpIntervalMs")) save.addInt("kcpIntervalMs", kcpIntervalMs, "KCP update interval in ms (10-100)");
+        if (!skip.contains("kcpWindow")) save.addInt("kcpWindow", kcpWindow, "KCP send/receive window in segments (128-4096)");
+        if (!skip.contains("kcpFastResend")) save.addInt("kcpFastResend", kcpFastResend, "KCP fast resend after N later ACKs; 0 = off");
     }
 
     public Builder toBuilder() {

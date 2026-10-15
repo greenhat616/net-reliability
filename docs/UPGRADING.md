@@ -41,7 +41,11 @@ java -jar .decompiled/vineflower.jar "<游戏目录>/Necesse.jar" .decompiled/sr
 - 数据报格式变了：改 `compat/WireFormat` 及其注释
 - `build.gradle` 的 `gameVersion` 改成新版本，`modVersion` 加一
 
-## 5. 测试
+## 5. Mod Settings Lib 升级时
+
+把新 jar 复制到 `mods/`，删掉旧的，重新编译。然后进游戏的 设置 → Mod 设置 → Net Reliability，确认每个选项都显示文字（显示成 `netrel...` 这样的 id，说明语言文件里缺了这个键）、改一项保存后 cfg 文件跟着变。`tools/common.sh` 会自动用创意工坊里订阅的版本。
+
+## 6. 测试
 
 ```bash
 JAVA_HOME=<JDK 17+> ./gradlew buildModJar     # 需要 JDK 17+ 运行 Gradle，产物是 Java 8 字节码

@@ -15,6 +15,7 @@ import necesse.engine.network.server.ServerClient;
 import netreliability.NetReliabilityMod;
 import netreliability.compat.GameInternals;
 import netreliability.config.NetConfig;
+import netreliability.config.NetSettings;
 import netreliability.config.SteamSendMode;
 import netreliability.core.HookStatus;
 import netreliability.core.ReceiveTracker;
@@ -65,6 +66,7 @@ public class NetRelCommand extends ModularChatCommand {
                 break;
             case "reload":
                 String error = NetConfig.reloadFromFile();
+                NetSettings.pushToPage();
                 NetReliabilityMod.applyConfig();
                 logs.add(error == null ? "Reloaded " + NetConfig.file() : "Could not read " + NetConfig.file() + ", settings unchanged: " + error);
                 logs.add(NetConfig.get().describe());
@@ -76,7 +78,7 @@ public class NetRelCommand extends ModularChatCommand {
                 }
                 NetConfig.Builder nb = NetConfig.get().toBuilder();
                 nb.nackEnabled = "on".equals(arg);
-                NetConfig.set(nb.build());
+                NetConfig.setRuntime(nb.build());
                 logs.add("NACK recovery " + arg + " (until reload)");
                 break;
             case "sim":
@@ -93,7 +95,7 @@ public class NetRelCommand extends ModularChatCommand {
                 NetConfig.Builder sb = NetConfig.get().toBuilder();
                 sb.simulatedLoss = loss;
                 if (extra != null) sb.simulatedLossFragmentsOnly = "fragments".equals(extra);
-                NetConfig.set(sb.build());
+                NetConfig.setRuntime(sb.build());
                 logs.add("Simulated incoming loss " + loss + (sb.simulatedLossFragmentsOnly ? " (fragments only)" : " (all datagrams)")
                     + " on this " + (clientSide ? "client" : "server") + " (until reload)");
                 break;
@@ -107,7 +109,7 @@ public class NetRelCommand extends ModularChatCommand {
                 }
                 NetConfig.Builder tb = NetConfig.get().toBuilder();
                 tb.steamSendMode = mode;
-                NetConfig.set(tb.build());
+                NetConfig.setRuntime(tb.build());
                 NetReliabilityMod.applyConfig();
                 logs.add(SteamSupport.describe() + " (until reload)");
                 break;

@@ -35,6 +35,14 @@
 
 只要第 0 片被乱序或重发，就会触发这个 bug，而 NACK 补发第 0 片正是这种情况。`NetworkPacketMergePatch` 在返回值不是 `this` 时，把 `this` 的计数（已经包含刚合并的这一片）复制给返回值，开销是常数时间。游戏更新后如果修了这个 bug，这个 patch 照样无害。设置 `fixVanillaMergeBug = false` 可以关掉它（只用于对比测试）。
 
+## 依赖的其他 Mod
+
+| Mod | 用到的 API | 改了会怎样 |
+|---|---|---|
+| Mod Settings Lib（`aizsave.modsettingslib`，创意工坊 3558238376，当前 1.2.7） | `CustomModSettings`（继承它；`addBooleanSetting`/`addIntSetting`/`addSelectionSetting`/`addTextSeparator`/`addParagraph`，`settingsMap`）、`CustomModSetting.getValue/changeValue`、`SelectionSetting.Option`、`IntSetting.DisplayMode`；设置页的文字从 `[settingsui]` 按 id 查 | 编译失败或启动时 `NoClassDefFoundError`。库升级后先用新 jar 编译一次，再进设置页看一遍 |
+
+库的一个行为是 `NetSettings` 依赖的：设置页点"保存"时，库**先**调用保存监听器，**然后**才把新值写进设置对象，最后调用 `Settings.saveClientSettings()`。所以本 Mod 不用监听器，而是在 `addSaveData` 里读取新值。
+
 ## 依赖的公开成员和行为
 
 | 成员 / 行为 | 用途 |

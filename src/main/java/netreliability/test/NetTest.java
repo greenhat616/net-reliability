@@ -130,7 +130,7 @@ public final class NetTest {
             if (LOSS_AFTER_JOIN >= 0) {
                 NetConfig.Builder b = NetConfig.get().toBuilder();
                 b.simulatedLoss = LOSS_AFTER_JOIN;
-                NetConfig.set(b.build());
+                NetConfig.setRuntime(b.build());
                 GameLog.out.println("[NetReliability] test client simulated loss now " + LOSS_AFTER_JOIN);
             }
             report(client, 0, now - clientStart);

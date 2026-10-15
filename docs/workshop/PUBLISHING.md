@@ -7,7 +7,7 @@ Necesse 没有独立的上传工具，上传在**游戏内**完成：用开发�
 | 文件 | 用途 |
 |---|---|
 | `src/main/resources/preview.png` | 640×640 预览图，打进 jar 的 `resources/preview.png`，上传时自动作为创意工坊封面。**jar 里没有这张图时，游戏不显示上传按钮**（`SteamDevModProvider` 中 `mod.preview != null` 是显示条件） |
-| `docs/workshop/description.bbcode` | 创意工坊描述（Steam BBCode，中英双语，约 4400 字符；游戏上传框上限 5000 字符） |
+| `docs/workshop/description.bbcode` | 创意工坊描述（Steam BBCode，中英双语，约 4700 字符；游戏上传框上限 5000 字符） |
 | `docs/workshop/images/01-nack.png`、`02-results.png`、`03-kcp.png` | 1280×720 功能介绍图，在 Steam 网页上作为附加图片 |
 | `tools/make_workshop_images.py` | 重新生成预览图和功能卡片：`python tools/make_workshop_images.py .`（需要 Pillow 和 Windows 自带字体）。柱状图的数据写在脚本开头的 `RESULTS` 里，来自 `docs/RESULTS.md` 第 2 轮的平均值 |
 
@@ -15,7 +15,7 @@ Necesse 没有独立的上传工具，上传在**游戏内**完成：用开发�
 
 ## 首次发布
 
-1. **构建**（Gradle 9 需要 JDK 17 以上）：
+1. **构建**（Gradle 9 需要 JDK 17 以上；`mods/` 里要有 Mod Settings Lib 的 jar，见 README）：
    ```bash
    JAVA_HOME=/g/scoop/apps/temurin17-jdk/current ./gradlew buildModJar test
    tools/check-internals.sh
@@ -37,7 +37,7 @@ Necesse 没有独立的上传工具，上传在**游戏内**完成：用开发�
    - 点「继续」，同意 Steam 创意工坊服务条款，确认内容是你自己创作的。
 
 5. 看到「成功地创建/更新了模组」后，到 Steam 网页上完成其余设置（Steam 客户端 → 社区 → 创意工坊 → 你的文件）：
-   - **必需物品**：无。
+   - **必需物品**：「添加/移除必需物品」→ 添加 **Mod Settings Lib**（`3558238376`）。订阅者会被提示同时订阅它。
    - **图片和视频**：上传 `docs/workshop/images/` 下的 3 张图。
    - **可见性**：建议先设为「仅好友」，和朋友实际联机测一次（尤其是 Steam 好友加入，这条路径还没实测过），再改成「公开」。
    - 新上传的物品需要接受过 Steam 创意工坊法律协议，否则只有你自己能看到。
@@ -70,4 +70,6 @@ Necesse 没有独立的上传工具，上传在**游戏内**完成：用开发�
 - [ ] 主持世界，让朋友通过 **Steam 好友**加入：能正常游玩，`/netrelc status` 里 `Hooks seen` 的 `steamSend=true`
 - [ ] 至少一次真实网络（非本机）的直连 IP 联机，分别在 `kcpEnabled` 关和开的情况下
 - [ ] 独立服务器（`StartServer-nogui.bat` 或 `./gradlew runServer`）能正常加载。日志里的 `SteamSendPatch ... likely outdated mod` 是预期的
-- [ ] `build/jar/` 中只有一个 jar，jar 内包含 `resources/preview.png` 和 `mod.info`
+- [ ] 进 设置 → Mod 设置 → Net Reliability：每个选项都显示中文/英文文字（不是 `netrel...` id），改一项保存后 cfg 文件跟着变
+- [ ] 独立服务器的 `mods/` 文件夹里也要放 Mod Settings Lib 的 jar
+- [ ] `build/jar/` 中只有一个 jar，jar 内包含 `resources/preview.png`、`resources/locale/*.lang` 和 `mod.info`（其中 `dependencies = [aizsave.modsettingslib]`）

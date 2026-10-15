@@ -52,7 +52,7 @@ SendCache：按 identifier 保存原始数据报         Receiving → ReceiveTr
 | `packets/` | `PacketFragmentNack`，格式见 [PROTOCOL.md](PROTOCOL.md) | 只用公开 API |
 | `kcp/` | 实验性的 KCP 传输（[KCP.md](KCP.md)）：`Kcp`（ikcp.c 的移植）、`KcpSession`、`KcpTransport`、`KcpHooks`、`PacketKcpSegment` | 只用公开 API（加 `GameInternals` 生成包头） |
 | `steam/` | Steam P2P 发送路由。**只有这个包能引用 Steam 类**：独立服务器（`Server.jar`）没有 Steam 类，别处一引用就会在服务器上 `NoClassDefFoundError` | 是 |
-| `config/` | `NetConfig`（不可变快照，默认值只写在 `Builder` 里）、`NetSettings`（接入原版 mod 设置文件） | 只用公开 API |
+| `config/` | `NetConfig`（不可变快照，默认值只写在 `Builder` 里；文件里保存的一份和当前生效的一份分开，指令的临时修改不会被保存）、`NetSettings`（Mod Settings Lib 的设置页，加上设置文件里的其余选项） | 公开 API，加 Mod Settings Lib 的 API |
 | `stats/` | `NetStats`（进程级计数器）、`StatsLog`（CSV） | 只用公开 API |
 | `commands/` | `/netrel`（服务器）、`/netrelc`（本客户端） | 只用公开 API |
 | `test/` | `NetTest` 区域加载基准测试（只在 `-Dnetreliability.test=1` 时生效）、`PacketNetTestReady`、`TestCharacter` | 只用公开 API |

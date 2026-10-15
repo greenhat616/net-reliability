@@ -56,7 +56,7 @@ case "$(cd "$ROOT/build/nettest" && pwd)/$LABEL" in
 esac
 mkdir -p "$SERVER_DATA/saves/worlds"
 cp "$WORLD_TEMPLATE" "$SERVER_DATA/saves/worlds/nettest.zip"
-write_modlist "$SERVER_DATA"
+write_modlist "$SERVER_DATA" server
 write_modlist "$CLIENT_DATA"
 write_mod_config "$SERVER_DATA" "${SERVER_KV[@]}"
 write_mod_config "$CLIENT_DATA" "${CLIENT_KV[@]}"
